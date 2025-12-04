@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Media Detector • Glass</title>
+
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=SF+Pro+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <div class="bg">
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-blobs">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+    </div>
+  </div>
+
+  <main class="page">
+    <header class="glass header">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div class="brand-text">
+          <h1>AI Media Detector</h1>
+          <p class="sub">Unveil the truth behind your media — image, video, & audio</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
+          <i class="fa-solid fa-circle-half-stroke"></i>
+        </button>
+        <a class="icon-btn" href="#" target="_blank" rel="noopener" aria-label="Docs" title="Docs">
+          <i class="fa-regular fa-circle-question"></i>
+        </a>
+      </div>
+    </header>
+
+    <section class="glass types" aria-label="Choose media type">
+      <div class="type-pill active" data-type="all">
+        <i class="fa-solid fa-layer-group"></i> All
+      </div>
+      <div class="type-pill" data-type="image">
+        <i class="fa-regular fa-image"></i> Image
+      </div>
+      <div class="type-pill" data-type="video">
+        <i class="fa-solid fa-video"></i> Video
+      </div>
+      <div class="type-pill" data-type="audio">
+        <i class="fa-solid fa-music"></i> Audio
+      </div>
+    </section>
+
+    <form id="uploadForm" class="glass uploader" aria-label="Upload media for detection" novalidate>
+      <input id="fileInput" type="file"
+             accept=".jpg,.jpeg,.png,.mp4,.wav,.mp3"
+             hidden aria-hidden="true" />
+      <div id="dropZone" class="drop">
+        <div class="drop-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <div class="drop-text">
+          <h2>Drop your file here</h2>
+          <p>or click to browse • max 100 MB</p>
+          <p class="hint">Supported: JPG, PNG, MP4, WAV, MP3</p>
+        </div>
+      </div>
+
+      <div class="preview" id="preview" hidden>
+        <div class="preview-media">
+          <img id="previewImg" alt="Image preview" hidden />
+          <video id="previewVideo" controls playsinline hidden></video>
+          <audio id="previewAudio" controls hidden></audio>
+        </div>
+        <div class="preview-meta">
+          <p id="fileName" class="file-name"></p>
+          <p id="fileInfo" class="file-info"></p>
+          <button type="button" class="chip danger" id="clearBtn">
+            <i class="fa-regular fa-trash-can"></i> Remove
+          </button>
+        </div>
+      </div>
+
+      <div class="progress" id="progressWrap" hidden>
+        <div class="progress-bar" aria-hidden="true">
+          <span class="progress-fill" id="progressFill" style="width:0%"></span>
+        </div>
+        <div class="progress-text">
+          <span id="progressLabel">Uploading…</span>
+          <span id="progressPct">0%</span>
+        </div>
+      </div>
+
+      <div class="cta">
+        <button id="detectBtn" type="button" class="btn primary" disabled>
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Detect Authenticity
+        </button>
+      </div>
+    </form>
+
+    <section id="results" class="results" hidden>
+      <div class="glass result-card">
+        <div class="result-left">
+          <div class="badge" id="predBadge">
+            <i class="fa-regular fa-circle-question"></i> Pending
+          </div>
+
+          <div class="conf">
+            <div class="conf-top">
+              <span>Confidence</span>
+              <strong id="confValue">0%</strong>
+            </div>
+            <div class="conf-bar">
+              <span id="confFill" style="width:0%"></span>
+            </div>
+          </div>
+
+          <div class="blockchain-proof" id="blockchainBox" style="display:none; margin-top:20px; padding:16px; background:rgba(0,212,255,0.08); border-radius:12px; border:1px solid rgba(0,212,255,0.2);">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <i class="fa-solid fa-cube" style="color:#00d4ff; font-size:1.2em;"></i>
+              <strong style="color:#00d4ff;">Immutable Blockchain Proof</strong>
+            </div>
+            <p style="margin:6px 0; font-size:0.92em; opacity:0.9; line-height:1.4;">
+              This detection result has been permanently recorded on your private Ethereum blockchain.
+            </p>
+            <a href="#" id="txLink" target="_blank" rel="noopener"
+               style="display:inline-flex; align-items:center; gap:8px; color:#00d4ff; font-weight:600; text-decoration:none;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span id="txHashShort">0x...</span> → View in Ganache
+            </a>
+          </div>
+
+          <ul class="tips">
+            <li><i class="fa-regular fa-lightbulb"></i> Real media tends to show natural noise & variation.</li>
+            <li><i class="fa-solid fa-triangle-exclamation"></i> Fakes can reveal compression & blending artifacts.</li>
+          </ul>
+        </div>
+
+        <div class="result-right">
+          <div class="result-preview">
+            <img id="resImg" alt="Image preview" hidden />
+            <video id="resVideo" controls playsinline hidden></video>
+            <audio id="resAudio" controls hidden></audio>
+          </div>
+          <div class="result-meta">
+            <p class="meta-row"><i class="fa-regular fa-file"></i>
+              <span id="resName">—</span>
+            </p>
+            <p class="meta-row"><i class="fa-solid fa-hashtag"></i>
+              <span id="resType">—</span>
+            </p>
+          </div>
+          <div class="again">
+            <button class="btn" id="againBtn" type="button">
+              <i class="fa-solid fa-plus"></i> Analyze another file
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p>© 2025 • AI Media Detector</p>
+    </footer>
+  </main>
+
+  <dialog id="errorDialog" class="glass dialog">
+    <div class="dialog-head">
+      <h3><i class="fa-solid fa-circle-exclamation"></i> Something went wrong</h3>
+    </div>
+    <div class="dialog-body">
+      <p id="errorText">Unknown error.</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn" id="closeError">Close</button>
+    </div>
+  </dialog>
+
+  <script>
+    const themeToggle = document.getElementById("themeToggle");
+    const themeIcon = themeToggle.querySelector("i");
+
+    function applyTheme(mode) {
+      document.body.classList.remove("theme-light", "theme-dark", "theme-auto");
+      document.body.classList.add(mode);
+      localStorage.setItem("theme", mode);
+
+      if (mode === "theme-light") themeIcon.className = "fa-solid fa-sun";
+      else if (mode === "theme-dark") themeIcon.className = "fa-solid fa-moon";
+      else themeIcon.className = "fa-solid fa-circle-half-stroke";
+    }
+
+    const savedTheme = localStorage.getItem("theme") || "theme-auto";
+    applyTheme(savedTheme);
+
+    themeToggle.addEventListener("click", () => {
+      const current = document.body.classList.contains("theme-light") ? "theme-light" :
+                      document.body.classList.contains("theme-dark") ? "theme-dark" : "theme-auto";
+      const next = current === "theme-light" ? "theme-dark" : current === "theme-dark" ? "theme-auto" : "theme-light";
+      applyTheme(next);
+    });
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const detectBtn = document.getElementById('detectBtn');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressFill = document.getElementById('progressFill');
+    const progressPct  = document.getElementById('progressPct');
+    const progressLabel = document.getElementById('progressLabel');
+    const previewWrap = document.getElementById('preview');
+    const previewImg = document.getElementById('previewImg');
+    const previewVideo = document.getElementById('previewVideo');
+    const previewAudio = document.getElementById('previewAudio');
+    const fileNameEl = document.getElementById('fileName');
+    const fileInfoEl = document.getElementById('fileInfo');
+    const clearBtn = document.getElementById('clearBtn');
+
+    const results = document.getElementById('results');
+    const predBadge = document.getElementById('predBadge');
+    const confFill = document.getElementById('confFill');
+    const confValue = document.getElementById('confValue');
+    const resName = document.getElementById('resName');
+    const resType = document.getElementById('resType');
+    const resImg = document.getElementById('resImg');
+    const resVideo = document.getElementById('resVideo');
+    const resAudio = document.getElementById('resAudio');
+    const againBtn = document.getElementById('againBtn');
+
+    document.querySelectorAll('.type-pill').forEach(pill =>
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const type = pill.dataset.type;
+        let accept = '.jpg,.jpeg,.png,.mp4,.wav,.mp3';
+        if (type === 'image') accept = '.jpg,.jpeg,.png';
+        if (type === 'video') accept = '.mp4';
+        if (type === 'audio') accept = '.wav,.mp3';
+        fileInput.setAttribute('accept', accept);
+      })
+    );
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    ['dragover', 'dragenter'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); dropZone.classList.remove('drag'); }));
+    dropZone.addEventListener('drop', e => e.dataTransfer.files?.[0] && handleFile(e.dataTransfer.files[0]));
+    fileInput.addEventListener('change', e => e.target.files?.[0] && handleFile(e.target.files[0]));
+
+    const MAX_SIZE = 100 * 1024 * 1024;
+
+    function handleFile(file) {
+      if (!/\.(jpe?g|png|mp4|wav|mp3)$/i.test(file.name)) return showError('Unsupported file type.');
+      if (file.size > MAX_SIZE) return showError('File too large. Max 100 MB.');
+
+      fileNameEl.textContent = file.name;
+      fileInfoEl.textContent = `${(file.size/1024/1024).toFixed(1)} MB • ${file.type}`;
+      previewWrap.hidden = false;
+
+      const url = URL.createObjectURL(file);
+      previewImg.hidden = previewVideo.hidden = previewAudio.hidden = true;
+      if (file.type.startsWith('image/')) { previewImg.src = url; previewImg.hidden = false; }
+      else if (file.type.startsWith('video/')) { previewVideo.src = url; previewVideo.hidden = false; }
+      else if (file.type.startsWith('audio/')) { previewAudio.src = url; previewAudio.hidden = false; }
+
+      detectBtn.disabled = false;
+      results.hidden = true;
+    }
+
+    clearBtn.addEventListener('click', resetUI);
+    againBtn.addEventListener('click', resetUI);
+
+    function resetUI() {
+      fileInput.value = "";
+      previewWrap.hidden = true;
+      detectBtn.disabled = true;
+      results.hidden = true;
+      progressWrap.hidden = true;
+      progressFill.style.width = "0%";
+      progressPct.textContent = "0%";
+      confFill.style.width = "0%";
+      confValue.textContent = "0%";
+      predBadge.className = "badge";
+      predBadge.innerHTML = '<i class="fa-regular fa-circle-question"></i> Pending';
+      document.getElementById("blockchainBox").style.display = "none";
+    }
+
+    detectBtn.addEventListener('click', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      progressWrap.hidden = false;
+      progressLabel.textContent = "Uploading…";
+      progressFill.style.width = "0%";
+      progressPct.textContent = "0%";
+      detectBtn.disabled = true;
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/predict", true);
+
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          progressFill.style.width = pct + "%";
+          progressPct.textContent = pct + "%";
+        }
+      };
+
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+          progressLabel.textContent = "Processing…";
+        }
+      };
+
+      xhr.onerror = () => { showError("Network error."); detectBtn.disabled = false; progressWrap.hidden = true; };
+
+      xhr.onload = () => {
+        progressFill.style.width = "100%";
+        progressPct.textContent = "100%";
+        setTimeout(() => progressWrap.hidden = true, 400);
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            renderResult(file, data);
+          } catch { showError("Invalid server response."); }
+        } else {
+          showError(xhr.responseText || "Server error.");
+        }
+        detectBtn.disabled = false;
+      };
+
+      xhr.send(formData);
+    });
+
+    function renderResult(file, data) {
+      const url = URL.createObjectURL(file);
+      resImg.hidden = resVideo.hidden = resAudio.hidden = true;
+      if (file.type.startsWith("image/")) { resImg.src = url; resImg.hidden = false; }
+      else if (file.type.startsWith("video/")) { resVideo.src = url; resVideo.hidden = false; }
+      else if (file.type.startsWith("audio/")) { resAudio.src = url; resAudio.hidden = false; }
+
+      const isReal = (data?.prediction || "").toUpperCase() === "REAL";
+      const conf = Math.round((Number(data?.confidence ?? 0)) * 100);
+
+      confFill.style.width = conf + "%";
+      confValue.textContent = conf + "%";
+
+      predBadge.className = "badge " + (isReal ? "good" : "bad");
+      predBadge.innerHTML = isReal
+        ? '<i class="fa-solid fa-circle-check"></i> REAL'
+        : '<i class="fa-solid fa-circle-xmark"></i> FAKE';
+
+      resName.textContent = data?.filename || file.name;
+      resType.textContent = file.type;
+
+      // BLOCKCHAIN PROOF
+      const blockchainBox = document.getElementById("blockchainBox");
+      const txLink = document.getElementById("txLink");
+      const txHashShort = document.getElementById("txHashShort");
+
+      if (data?.blockchain_proof && data.blockchain_proof !== "failed") {
+        const short = data.blockchain_proof.slice(0, 8) + "..." + data.blockchain_proof.slice(-6);
+        txHashShort.textContent = short;
+        txLink.href = data.tx_link || `http://127.0.0.1:7545/tx/${data.blockchain_proof}`;
+        blockchainBox.style.display = "block";
+      } else {
+        blockchainBox.style.display = "none";
+      }
+
+      results.hidden = false;
+      results.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    const errorDialog = document.getElementById('errorDialog');
+    const errorText = document.getElementById('errorText');
+    const closeError = document.getElementById('closeError');
+
+    function showError(msg) {
+      errorText.textContent = msg.replace(/^"|"$/g, "");
+      errorDialog.showModal();
+    }
+
+    closeError.addEventListener("click", () => errorDialog.close());
+    dropZone.setAttribute("tabindex", "0");
+  </script>
+</body>
+</html>
